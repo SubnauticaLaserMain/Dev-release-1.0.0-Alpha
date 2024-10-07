@@ -1,0 +1,1230 @@
+local Players = game:GetService('Players')
+
+local repo = "https://raw.githubusercontent.com/mstudio45/LinoriaLib/refs/heads/main/"
+
+
+local ESPLibrary = loadstring(game:HttpGet("https://raw.githubusercontent.com/mstudio45/MS-ESP/refs/heads/main/source.lua"))()
+
+
+
+local function calculatePercentage(value, min, max)
+    -- Ensure min is less than max to avoid division by zero
+    if min >= max then
+        error("Minimum value must be less than maximum value.")
+    end
+    
+    -- Calculate the percentage
+    local percentage = ((value - min) / (max - min)) * 100
+    
+    -- Round the percentage to two decimal places
+    percentage = math.floor(percentage * 100 + 0.5) / 100
+    
+    return percentage
+end
+
+
+
+local function safe_require(module)
+    local v1,v2=pcall(function()
+        local v3=(getrenv and type(getrenv)=='function' and getrenv().require) or require;
+        local v4=module;
+        return v3(v4)
+    end)
+    return v2 or nil
+end
+
+
+local Library = loadstring(game:HttpGet(repo .. 'Library.lua'))()
+local ThemeManager = loadstring(game:HttpGet(repo .. 'addons/ThemeManager.lua'))()
+local SaveManager = loadstring(game:HttpGet(repo .. 'addons/SaveManager.lua'))()
+local Options = getgenv().Linoria.Options
+local Toggles = getgenv().Linoria.Toggles
+
+
+
+local Title
+
+if game.PlaceId == 3851622790 then
+    Title = 'Break In (Story) | Lobby'
+end
+
+if game.PlaceId == 4620170611 then
+    Title = 'Break In (Story) | In-Game'
+end
+
+
+
+
+
+
+
+local Window = Library:CreateWindow({
+    Title = Title,
+    Center = true,
+    AutoShow = true,
+    Resizable = true,
+    NotifySide = "Right",
+    ShowCustomCursor = true,
+    TabPadding = 2,
+    MenuFadeTime = 0
+})
+
+
+local Tabs = {
+    Main = Window:AddTab('Main')
+}
+
+
+
+
+
+-- local PlayerScripts = Players.LocalPlayer and Players.LocalPlayer:FindFirstChild('PlayerScripts')
+
+-- local RolesService_Module = safe_require(PlayerScripts.RolesService)
+
+
+
+
+local BreakInStory
+
+
+if game.PlaceId == 3851622790 then
+    BreakInStory = {
+        EquipRole = game:GetService('ReplicatedStorage'):WaitForChild('RemoteEvents'):WaitForChild('MakeRole'),
+        EquipRole2 = game:GetService('ReplicatedStorage'):WaitForChild('RemoteEvents'):WaitForChild('OutsideRole'),
+    }
+
+    BreakInStory.EquipRoleFunc = function(...)
+        local v1=BreakInStory;
+        local v2=v1.EquipRole;
+        local v3=v1.EquipRole2;
+        local v4={...};
+        local v5={[1]=v4[1],[2]=v4[3]}
+        local v6=(unpack)or(table.unpack);
+
+        v3:FireServer(v6(v5))
+        v2:FireServer(v6(v4))
+    end
+else
+    BreakInStory = {}
+end
+
+
+
+
+
+
+
+
+
+local Roblox = {
+    Chat = {
+        SendChatMessage = function(mes)
+            local ReplicatedStorage = game:GetService('ReplicatedStorage')
+            local TextChatService = game:GetService('TextChatService')
+
+            
+            if TextChatService.ChatVersion == Enum.ChatVersion.TextChatService then
+                local TextChatManager
+            end
+        end
+    }
+}
+
+
+local Script = {}
+
+
+Script.Functions = {}
+
+
+function Script.Functions.EnforceTypes(args, template)
+    args = type(args) == "table" and args or {}
+
+    for key, value in pairs(template) do
+        local argValue = args[key]
+
+        if argValue == nil or (value ~= nil and type(argValue) ~= type(value)) then
+            args[key] = value
+        elseif type(value) == "table" then
+            args[key] = Script.Functions.EnforceTypes(argValue, value)
+        end
+    end
+
+    return args
+end
+
+
+Script.Functions.Notifs = {}
+Script.Functions.Notifs.Doors = {}
+
+
+Script.Functions.Admin = {}
+Script.Functions.Admin.Notifications = {}
+Script.Functions.Admin.Notifications.Doors = {}
+
+Script.Functions.Admin.Notifications.InstallAdmin = function()
+    local CoreGui = game:GetService('CoreGui')
+    
+    local Notifications_ScreenGui = Instance.new('ScreenGui')
+    Notifications_ScreenGui.Parent = CoreGui
+    Notifications_ScreenGui.Name = 'Notifications_Admin'
+
+    return Notifications_ScreenGui
+end
+
+Script.Functions.Admin.Notifications.CheckInstalledAdmin = function()
+    local CoreGui = game:GetService('CoreGui')
+
+    if CoreGui:FindFirstChild('Notifications_Admin') then
+        return true
+    else
+        return false, Script.Functions.Admin.Notifications.InstallAdmin()
+    end
+end
+
+Script.Functions.Admin.Notifications.Doors.Install = function()
+    Script.Functions.Admin.Notifications.CheckInstalledAdmin()
+
+    local notifi = game:GetObjects('rbxassetid://88537185093496')[1]
+
+    return notifi
+end
+
+Script.Functions.Admin.Notifications.Doors.Check = function()
+    local check = Script.Functions.Admin.Notifications.CheckInstalledAdmin()
+
+    task.wait(0.1)
+
+    if not game:GetService('CoreGui'):FindFirstChild('Notifications_Admin'):FindFirstChild('AchievementsHolder') then
+        local noti = Script.Functions.Admin.Notifications.Doors.Install()
+
+        noti.Parent = game:GetService('CoreGui'):FindFirstChild('Notifications_Admin')
+    end
+
+    return true
+end
+
+
+
+Script.Functions.Notifs.Doors.Notify = function(unsafeOptions)
+    local TweenService = game:GetService('TweenService')
+
+    local ScriptAdmin = Script.Functions.Admin.Notifications.Doors
+
+    if ScriptAdmin.Check() == false then
+        ScriptAdmin.Install()
+    end
+    Script.Functions.Admin.Notifications.Doors.Check()
+
+
+    assert(typeof(unsafeOptions) == "table", "Expected a table as options argument but got " .. typeof(unsafeOptions))
+
+    local mainUI = game:GetService('CoreGui'):FindFirstChild('Notifications_Admin')
+
+    if not mainUI then return nil and warn('Missing Alias! Missing Roblox Doors Notification Download!') end
+
+
+    local options = Script.Functions.EnforceTypes(unsafeOptions, {
+        Title = "No Title",
+        Description = "No Text",
+        Reason = "",
+        NotificationType = "NOTIFICATION",
+        Image = "6023426923",
+        Color = nil,
+        Time = nil,
+    
+        TweenDuration = 0.8
+    })
+
+    local acheivement = mainUI.AchievementsHolder.Achievement:Clone()
+    acheivement.Size = UDim2.new(0, 0, 0, 0)
+    acheivement.Frame.Position = UDim2.new(1.1, 0, 0, 0)
+    acheivement.Name = "LiveAchievement"
+    acheivement.Visible = true
+    
+    acheivement.Frame.TextLabel.Text = options.NotificationType
+    
+    if options.Color ~= nil then
+        acheivement.Frame.TextLabel.TextColor3 = options.Color
+        acheivement.Frame.UIStroke.Color = options.Color
+        acheivement.Frame.Glow.ImageColor3 = options.Color
+    end
+        
+    acheivement.Frame.Details.Desc.Text = tostring(options.Description)
+    acheivement.Frame.Details.Title.Text = tostring(options.Title)
+    acheivement.Frame.Details.Reason.Text = tostring(options.Reason or "")
+    
+    if options.Image:match("rbxthumb://") or options.Image:match("rbxassetid://") then
+        acheivement.Frame.ImageLabel.Image = tostring(options.Image or "rbxassetid://0")
+    else
+        acheivement.Frame.ImageLabel.Image = "rbxassetid://" .. tostring(options.Image or "0")
+    end
+    
+    acheivement.Parent = mainUI.AchievementsHolder
+
+    
+    
+    task.spawn(function()
+        acheivement:TweenSize(UDim2.new(1, 0, 0.2, 0), "In", "Quad", options.TweenDuration, true)
+        
+        task.wait(0.8)
+        
+        acheivement.Frame:TweenPosition(UDim2.new(0, 0, 0, 0), "Out", "Quad", 0.5, true)
+        
+        TweenService:Create(acheivement.Frame.Glow, TweenInfo.new(1, Enum.EasingStyle.Quad, Enum.EasingDirection.In),{
+            ImageTransparency = 1
+        }):Play()
+        
+        if options.Time ~= nil then
+            if typeof(options.Time) == "number" then
+               task.wait(options.Time)
+            elseif typeof(options.Time) == "Instance" then
+                options.Time.Destroying:Wait()
+            end
+        else
+            task.wait(5)
+        end
+        
+        acheivement.Frame:TweenPosition(UDim2.new(1.1, 0, 0, 0), "In", "Quad", 0.5, true)
+        task.wait(0.5)
+        acheivement:TweenSize(UDim2.new(1, 0, -0.1, 0), "InOut", "Quad", 0.5, true)
+        task.wait(0.5)
+        acheivement:Destroy()
+    end)
+end
+
+
+
+
+Script.ESPTable = {
+    Item = {},
+    SideEntity = {},
+    Objective = {},
+    None = {},
+    House_ESP = {},
+    Basement_ESP_Snacks = {},
+    Basement_ESP_4 = {},
+
+
+    Enemies_Bads = {},
+    Cat = {},
+    Vault = {},
+
+    Paintings = {},
+}
+
+
+
+
+
+
+if game.PlaceId == 3851622790 then
+    local RolesTab = Tabs.Main:AddLeftGroupbox('Role')
+
+
+    do
+        RolesTab:AddLabel('Kids')
+
+        RolesTab:AddButton({
+            Text = 'The Stealthy',
+            Func = function()
+                if BreakInStory and BreakInStory.EquipRoleFunc then
+                    local toggled = Toggles.usingSkin.Value
+
+                    BreakInStory.EquipRoleFunc('TeddyBloxpin', true, toggled or false) -- arg 3: costume
+                end
+            end
+        })
+
+        RolesTab:AddButton({
+            Text = 'The Hungry',
+            Func = function()
+                if BreakInStory and BreakInStory.EquipRoleFunc then
+                    local toggled = Toggles.usingSkin.Value
+
+                    BreakInStory.EquipRoleFunc('Chips', true, toggled or false)
+                end
+            end
+        })
+
+        RolesTab:AddButton({
+            Text = 'The Fighter',
+            Func = function()
+                if BreakInStory and BreakInStory.EquipRoleFunc then
+                    local toggled = Toggles.usingSkin.Value
+
+                    BreakInStory.EquipRoleFunc('Sword', true, toggled or false)
+                end
+            end
+        })
+
+
+        RolesTab:AddDivider()
+
+        RolesTab:AddLabel('Adults')
+
+
+        RolesTab:AddButton({
+            Text = 'The Protector',
+            Func = function()
+                if BreakInStory and BreakInStory.EquipRoleFunc then
+                    local toggled = Toggles.usingSkin.Value
+
+                    BreakInStory.EquipRoleFunc('Bat', false, toggled or false)
+                end
+            end
+        })
+
+        RolesTab:AddButton({
+            Text = 'The Medic',
+            Func = function()
+                if BreakInStory and BreakInStory.EquipRoleFunc then
+                    local toggled = Toggles.usingSkin.Value
+
+                    BreakInStory.EquipRoleFunc('MedKit', false, toggled or false)
+                end
+            end
+        })
+
+        RolesTab:AddButton({
+            Text = 'The Officer',
+            Func = function()
+                if BreakInStory and BreakInStory.EquipRoleFunc then
+                    local toggled = Toggles.usingSkin.Value
+
+                    BreakInStory.EquipRoleFunc('Gun', false, toggled or false)
+                end
+            end
+        })
+
+        RolesTab:AddButton({
+            Text = 'The Swat',
+            Func = function()
+                if BreakInStory and BreakInStory.EquipRoleFunc then
+                    local toggled = Toggles.usingSkin.Value
+
+                    BreakInStory.EquipRoleFunc('SwatGun', false, toggled or false)
+                end
+            end
+        })
+    end
+
+
+    local RoleSettingsSec = Tabs.Main:AddRightGroupbox('Role Settings')
+
+
+    do
+        RoleSettingsSec:AddToggle('usingSkin', {
+            Text = 'Using Costume/Skin',
+            Default = false
+        })
+    end
+end
+
+
+
+Script.Functions.ESP = function(args)
+    if not args.Object then return warn('ESP Object missing') end
+
+    local ESPManager = {
+        Object = args.Object,
+        Text = args.Text or (args.Object and args.Object.Name) or 'No Text',
+        Color = args.Color or Color3.new(),
+        Offset = args.Offset or Vector3.zero,
+        IsEntity = args.IsEntity or false,
+        IsDoubleDoor = args.IsDoubleDoor or false,
+        OnDestroy = args.OnDestroy or nil,
+
+        Invisible = false,
+        Humanoid = nil
+    }
+
+
+    if ESPManager.IsEntity and ESPManager.Object.PrimaryPart then
+        if ESPManager.Object.PrimaryPart.Transparency == 1 then
+            ESPManager.Invisible = true
+            ESPManager.Object.PrimaryPart.Transparency = 0.99
+        end
+
+        local humanoid = ESPManager.Object:FindFirstChildOfClass('Humanoid')
+
+        if not humanoid then humanoid = Instance.new('Humanoid', ESPManager.Object) end
+
+
+        ESPManager.Humanoid = humanoid
+    end
+
+
+    local ESPInstance = ESPLibrary.ESP.Highlight({
+        Name = ESPManager.Text,
+        Model = ESPManager.Object,
+        StudsOffset = ESPManager.Offset,
+    
+        FillColor = ESPManager.Color,
+        OutlineColor = ESPManager.Color,
+        TextColor = ESPManager.Color,
+        TextSize = Options.ESPTextSize and Options.ESPTextSize.Value or 16,
+
+        FillTransparency = Options.ESPFillTransparency and Options.ESPFillTransparency.Value or 0.2,
+        OutlineTransparency = Options.ESPOutlineTransparency and Options.ESPOutlineTransparency.Value or 0.2,
+    
+        Tracer = {
+            Enabled = Toggles.ESPTracer and Toggles.ESPTracer.Value or true,
+            From = Options.ESPTracerStart and Options.ESPTracerStart.Value or 'Bottom',
+            Color = ESPManager.Color
+        },
+    
+        OnDestroy = ESPManager.OnDestroy or function()
+            if ESPManager.Object.PrimaryPart and ESPManager.Invisible then ESPManager.Object.PrimaryPart.Transparency = 1 end
+            if ESPManager.Humanoid then ESPManager.Humanoid:Destroy() end
+        end
+    })
+    
+    table.insert(Script.ESPTable[args.Type], ESPInstance)
+    
+    return ESPInstance
+end
+
+Script.Functions.DeleteESP = function(ESPType)
+    if Script.ESPTable and Script.ESPTable[ESPType] then
+        for i, v in pairs(Script.ESPTable[ESPType]) do
+            if i and v then
+                v:Destroy()
+            end
+        end
+    end
+end
+
+Script.Functions.DeleteESP_Part = function(Type, ESP_Name)
+    if Script.ESPTable and Script.ESPTable[Type] then
+        if Script.ESPTable[Type][ESP_Name] then
+            Script.ESPTable[Type][ESP_Name]:Destroy()
+        end
+    end
+end
+
+Script.Functions.RefreshESP = function(Type, args)
+    Script.Functions.DeleteESP(Type)
+
+    Script.Functions.ESP(args)
+end
+
+
+
+
+
+if game.PlaceId == 4620170611 then
+    local ItemsTab = Tabs.Main:AddLeftGroupbox('Items')
+
+
+    BreakInStory.Items = {
+        GiveItem = function(item: string)
+            local GiveTool = game:GetService('ReplicatedStorage').RemoteEvents:WaitForChild('GiveTool')
+
+            GiveTool:FireServer(item)
+        end,
+
+        GiveWeapon = function(weapon: string)
+            local BasementWeapon = game:GetService('ReplicatedStorage').RemoteEvents:WaitForChild('BasementWeapon')
+
+            BasementWeapon:FireServer(weapon)
+        end
+    }
+
+
+
+    do
+        ItemsTab:AddLabel('Foods')
+
+        ItemsTab:AddButton({
+            Text = 'Give Apple',
+            Func = function()
+                BreakInStory.Items.GiveItem('Apple')
+            end
+        })
+
+        ItemsTab:AddButton({
+            Text = 'Give Cookie',
+            Func = function()
+                BreakInStory.Items.GiveItem('Cookie')
+            end
+        })
+
+        ItemsTab:AddButton({
+            Text = 'Give Bloxycola',
+            Func = function()
+                BreakInStory.Items.GiveItem('BloxyCola')
+            end
+        })
+
+        
+        ItemsTab:AddButton({
+            Text = 'Give Pizza',
+            Func = function()
+                local item = 'Pizza' .. tostring(Options.PizzaSizeType.Value)
+
+               -- for i, v in pairs(Options.PizzaSizeType) do
+               --     print(i, v)
+               -- end
+
+                BreakInStory.Items.GiveItem(item)
+            end
+        })
+        
+        ItemsTab:AddSlider('PizzaSizeType', {
+            Text = 'Pizza Size',
+            Default = 2,
+            Min = 1,
+            Max = 3,
+            Rounding = 0
+        })
+
+        ItemsTab:AddButton({
+            Text = 'Give Lollipop',
+            Func = function()
+                BreakInStory.Items.GiveItem('Lollipop')
+            end
+        })
+
+        ItemsTab:AddButton({
+            Text = 'Give Poisonous Pizza',
+            Func = function()
+                BreakInStory.Items.GiveItem('EpicPizza')
+            end
+        })
+
+        ItemsTab:AddButton({
+            Text = 'Give Expired Bloxycola',
+            Func = function()
+                BreakInStory.Items.GiveItem('ExpiredBloxyCola')
+            end
+        })
+
+
+        -- can u pls give me a list over the Roblox Break in Story food items pls / full list whould be nice pls 
+
+
+        ItemsTab:AddDivider()
+
+
+        ItemsTab:AddLabel('Weapons')
+
+
+        ItemsTab:AddButton({
+            Text = 'Give Bat',
+            Func = function()
+                BreakInStory.Items.GiveItem('Bat')
+            end
+        })
+
+        ItemsTab:AddButton({
+            Text = 'Give Classic Sword',
+            Func = function()
+                BreakInStory.Items.GiveItem('LinkedSword')
+            end
+        })
+
+        ItemsTab:AddButton({
+            Text = 'Give Pitchfork',
+            Func = function()
+                BreakInStory.Items.GiveItem('Pitchfork')
+            end
+        })
+
+        ItemsTab:AddButton({
+            Text = 'Give Toy Sword',
+            Func = function()
+                BreakInStory.Items.GiveItem('Sword')
+            end
+        })
+
+        ItemsTab:AddButton({
+            Text = 'Give Hammer',
+            Func = function()
+                BreakInStory.Items.GiveItem('Hammer')
+            end
+        })
+
+        ItemsTab:AddButton({
+            Text = 'Give IceBreaker',
+            Func = function()
+                BreakInStory.Items.GiveItem('Breaker')
+            end
+        })
+
+        --ItemsTab:AddButton({
+        --    Text = 'Give Broom',
+        --    Func = function()
+        --        BreakInStory.Items.GiveItem('Broom')
+        --    end
+        --})
+
+        ItemsTab:AddButton({
+            Text = 'Give Gun',
+            Func = function()
+                BreakInStory.Items.GiveItem('Gun')
+            end
+        })
+
+
+        ItemsTab:AddDivider()
+
+        ItemsTab:AddLabel('Tools - In Development')
+
+
+        --ItemsTab:AddButton({
+        --    
+        --})
+    end
+
+
+
+    local windows = game:GetService('UserInputService'):GetPlatform() == (Enum.Platform.Windows or Enum.Platform.UWP)
+
+
+    local function tpModelToPlayers(model: Model)
+        pcall(function()
+            if model and typeof(modle) == 'Instance' and model.ClassName == 'Model' then
+                local Players = game:GetService('Players')
+                local plr = Players.LocalPlayer
+                local Character = plr.Character or plr.CharacterAdded:Wait()
+
+                if Character then
+                    local HRP = Character:FindFirstChild('HumanoidRootPart')
+
+                    if HRP then
+                        model:PivotTo(model.CFrame)
+                    end
+                end
+            end
+        end)
+    end
+
+
+    if windows == true then
+        local AtticStuff = Tabs.Main:AddRightGroupbox('Attic')
+
+
+        do
+            AtticStuff:AddButton({
+                Text = 'Click Broom',
+                Func = function()
+                    local fireclick = fireclickdetector;
+
+                    local Basement = game:GetService('Workspace'):FindFirstChild('Basement')
+
+                    if Basement then
+                        local Weapons = Basement:FindFirstChild('Weapons')
+
+                        if Weapons then
+                            local Broom = Weapons:FindFirstChild('Broom')
+
+                            if Broom then
+                                if fireclick and type(fireclick) == 'function' then
+                                    pcall(function()
+                                        fireclick(Broom.ClickDetector)
+                                    end)
+                                end
+                            end
+                        end
+                    end
+                end
+            })
+
+
+            --- Breaker
+
+            AtticStuff:AddButton({
+                Text = 'Click IceBreaker',
+                Func = function()
+                    local fireclick = fireclickdetector;
+
+                    local Basement = game:GetService('Workspace'):FindFirstChild('Basement')
+
+                    if Basement then
+                        local Weapons = Basement:FindFirstChild('Weapons')
+
+                        if Weapons then
+                            local Breaker = Weapons:FindFirstChild('Breaker')
+
+                            if Breaker then
+                                if fireclick and type(fireclick) == 'function' then
+                                    pcall(function()
+                                        fireclick(Breaker.ClickDetector)
+                                    end)
+                                end
+                            end
+                        end
+                    end
+                end
+            })
+
+            AtticStuff:AddButton({
+                Text = 'Click Attic-Item',
+                Func = function()
+                    local Attic = game:GetService('Workspace'):FindFirstChild('Attic')
+
+                    if Attic then
+                        local AtticItem = Attic:FindFirstChild('BloxyPack') or Attic:FindFirstChild('PieDish')
+
+                        if AtticItem then
+                            pcall(function()
+                                fireclickdetector(AtticItem.ClickDetector)
+                            end)
+                        end
+                    end
+                end
+            })
+
+            AtticStuff:AddButton({
+                Text = 'Click BadPizza Box',
+                Func = function()
+                    local Attic = game:GetService('Workspace'):FindFirstChild('Attic')
+
+                    if Attic then
+                        local BadPizza = Attic:FindFirstChild('BadPizza')
+
+                        if BadPizza then
+                            pcall(function()
+                                fireclickdetector(BadPizza.ClickDetector)
+                            end)
+                        end
+                    end
+                end
+            })
+
+
+            AtticStuff:AddToggle('LoopTP_OnDemand_BadPizza', {
+                Text = 'Loop BadPizza Box',
+                Defualt = false
+            })
+
+            Toggles['LoopTP_OnDemand_BadPizza']:OnChanged(function()
+                pcall(function()
+                    if Toggles['LoopTP_OnDemand_BadPizza'].Value == true then
+                        while true do
+                            do
+                                local BadPizzaBox = workspace:FindFirstChild('Attic')
+
+                                if BadPizzaBox then
+                                    BadPizzaBox = BadPizzaBox:FindFirstChild('BadPizza')
+
+                                    if BadPizzaBox then
+                                        tpModelToPlayers(BadPizzaBox)
+                                    end
+                                end
+                            end
+
+                            if Toggles['LoopTP_OnDemand_BadPizza'].Value == false then
+                                return
+                            end
+
+                            game:GetService('RunService').RenderStepped:Wait()
+                        end
+                    end
+                end)
+            end)
+        end
+    end
+
+
+    Tabs.Visuals = Window:AddTab('Visuals')
+
+    do
+        local Visuals = Tabs.Visuals
+
+        local ItemESP = Visuals:AddLeftGroupbox('ESP')
+
+        ItemESP:AddToggle('ItemESP2', {
+            Text = 'House ItemESP',
+            Default = false
+        }):AddColorPicker('House_Item_ESP_ColorPicker', {
+            Default = Color3.new(1, 0, 1)
+        })
+
+        ItemESP:AddToggle('Safe_Code_ESP_Toggle', {
+            Text = 'Safe Code - ESP',
+            Default = false
+        }):AddColorPicker('SafeCode_ESP_4', {
+            Default = Color3.new(0, 0, 1)
+        })
+
+        ItemESP:AddToggle('BadGuysESP_V1', {
+            Text = 'Enemies ESP',
+            Default = false
+        }):AddColorPicker('BadGuysESP_V1_ColorPicker', {
+            Default = Color3.new(1, 0, 0)
+        })
+
+        ItemESP:AddToggle('Cattery_V1_ESP_Toggle', {
+            Text = 'Cat ESP',
+            Default = false
+        }):AddColorPicker('Cattery_V1_ESP::ColorPicker', {
+            Default = Color3.new(1, 1, 0)
+        })
+
+        ItemESP:AddToggle('Vault-Safe ESP_Toggle', {
+            Text = 'Safe ESP',
+            Defualt = false
+        }):AddColorPicker('Valut-Safe ESP::ColorPicker', {
+            Default = Color3.new(0, 1, 0)
+        })
+
+        ItemESP:AddToggle('Paintings ESP_Toggle', {
+            Text = 'Painting ESP',
+            Default = false
+        }):AddColorPicker('Paintings ESP_ColorPicker', {
+            Default = Color3.fromRGB(0, 175, 255)
+        })
+
+
+
+        Toggles.ItemESP2:OnChanged(function()
+            if Toggles.ItemESP2.Value == true then
+                local ItemsNameTable = {'Apple', 'Cookie', 'Key', 'Money', 'BloxyCola'}
+
+                for i, v in game:GetService('Workspace'):GetChildren() do
+                    if v and v.Name and (v.Name:find('Apple') or v.Name:find('Cookie') or v.Name:find('BloxyCola') or v.Name:find('Key')) then
+                        local n = ''
+
+                        if v.Name:find('Apple') then n = 'Apple' end
+                        if v.Name:find('Cookie') then n = 'Cookie' end
+                        if v.Name:find('BloxyCola') then n = 'BloxyCola' end
+                        if v.Name:find('Key') then n = 'Key' end
+
+
+                        local a, b = pcall(function()
+                            Script.Functions.ESP({
+                                Type = 'House_ESP',
+                                Object = v,
+                                Text = n,
+                                Color = Options.House_Item_ESP_ColorPicker.Value
+                            })
+                        end)
+
+                        if not a then
+                            print('Error: ' .. tostring(b))
+                        end
+                    end
+                end  
+            else
+                Script.Functions.DeleteESP('House_ESP')
+            end
+        end)
+    end
+
+
+    Toggles.Safe_Code_ESP_Toggle:OnChanged(function()
+        if Toggles.Safe_Code_ESP_Toggle.Value == true then
+            local Note = game:GetService('Workspace'):FindFirstChild('CodeNote')
+
+
+            if Note then
+                Script.Functions.ESP({
+                    Type = 'Basement_ESP_4',
+                    Object = Note,
+                    Text = 'Note',
+                    Color = Options.SafeCode_ESP_4.Value
+                })
+            end
+        else
+            Script.Functions.DeleteESP('Basement_ESP_4')
+        end
+    end)
+
+    local BadGuysESP_V1_Connections = nil
+    local HP_Changed_Connection = {}
+
+    Toggles.BadGuysESP_V1:OnChanged(function()
+        if Toggles.BadGuysESP_V1.Value == true then
+            if BadGuysESP_V1_Connections and typeof(BadGuysESP_V1_Connections) == 'RBXScriptConnection' then
+                Script.Functions.DeleteESP('Enemies_Bads')
+
+                BadGuysESP_V1_Connections:Disconnect()
+                BadGuysESP_V1_Connections = nil
+            end
+
+
+            if game:GetService('Workspace'):FindFirstChild('BadGuys') then
+                for i, v in pairs(game:GetService('Workspace').BadGuys:GetChildren()) do
+                    if i and v then
+                        local Hum = v:FindFirstChildOfClass('Humanoid')
+                        local ex = ''
+
+
+                        if Hum then
+                            ex = ' [' .. tostring(calculatePercentage(Hum.Health, 0, Hum.MaxHealth)) .. '% HP]'
+                        else
+                            ex = ' [0% HP]'
+                        end
+
+
+                        Script.Functions.ESP({
+                            Type = 'Enemies_Bads',
+                            Object = v,
+                            Text = 'Enemie', --.. tostring(ex),
+                            Color = Options.BadGuysESP_V1_ColorPicker.Value
+                        })
+                    end
+                end
+
+
+                BadGuysESP_V1_Connections = game:GetService('Workspace').BadGuys.ChildAdded:Connect(function(child)
+                    if child then
+                        local Hum = child:WaitForChild('Humanoid', 10)
+                        local ex = ''
+
+                        if Hum then
+                            ex = ' [' .. tostring(calculatePercentage(Hum.Health, 0, Hum.MaxHealth)) .. '% HP]'
+                        else
+                            ex = ' [0% HP]'
+                        end
+
+
+                        Script.Functions.ESP({
+                            Type = 'Enemies_Bads',
+                            Object = child,
+                            Text = 'Enemie',  --.. tostring(ex),
+                            Color = Options.BadGuysESP_V1_ColorPicker.Value
+                        })
+
+                        --[[
+                        Hum:GetPropertyChangedSignal('Health'):Connect(function()
+                            for i, v in game:GetService('Workspace').BadGuys:GetChildren() do
+                                local Hum = v:WaitForChild('Humanoid', 5)
+                                local ex = ''
+
+                                if Hum then
+                                    ex = ' [' .. tostring(calculatePercentage(Hum.Health, 0, Hum.MaxHealth)) .. '% HP]'
+                                else
+                                    ex = ' [0% HP]'
+                                end
+
+                                Script.Functions.RefreshESP('Enemies_Bads', {
+                                    Type = 'Enemies_Bads',
+                                    Object = child,
+                                    Text = 'Enemie' .. tostring(ex),
+                                    Color = Options.BadGuysESP_V1_ColorPicker.Value
+                                })
+                            end
+
+                            game:GetService('RunService').RenderStepped:Wait()
+                        end)
+                        ]]
+                    end
+                end)
+            end
+        else
+            Script.Functions.DeleteESP('Enemies_Bads')
+
+            if BadGuysESP_V1_Connections and typeof(BadGuysESP_V1_Connections) == 'RBXScriptConnection' then
+                BadGuysESP_V1_Connections:Disconnect()
+                BadGuysESP_V1_Connections = nil
+            end
+        end
+    end)
+
+
+    Toggles.Cattery_V1_ESP_Toggle:OnChanged(function()
+        if Toggles.Cattery_V1_ESP_Toggle.Value == true then
+            local TheHouse = game:GetService('Workspace'):FindFirstChild('TheHouse')
+
+            if TheHouse then
+                local Cat = TheHouse:FindFirstChild('SmallCat')
+
+                if Cat then
+                    Script.Functions.ESP({
+                        Type = 'Cat',
+                        Object = Cat,
+                        Text = 'Cat',
+                        Color = Options['Cattery_V1_ESP::ColorPicker'].Value
+                    })
+                end
+            end
+        else
+            Script.Functions.DeleteESP('Cat')
+        end
+    end)
+
+
+    local Signals = {
+        ['Signals'] = {
+
+        },
+    }
+
+
+    Signals.Functions = {
+        add = function(name, sig)
+            if Signals['Signals'][name] == nil then
+                Signals['Signals'][name] = sig
+            end
+        end,
+
+        set = function(name, newSig)
+            if Signals['Signals'][name] then
+                Signals['Signals'][name] = newSig
+            end
+        end,
+
+        remove = function(name)
+            if Signals['Signals'][name] then
+                Signals['Signals'][name] = nil
+            end
+        end,
+
+        check = function(name)
+            if Signals['Signals'][name] then
+                return true
+            else
+                return false
+            end
+        end
+    }
+
+
+
+    local Items = {
+        ['ItemsInStorage'] = {},
+    }
+
+
+    Items.Functions = {
+        add = function(name, item)
+            if Items['ItemsInStorage'][name] == nil then
+                Items['ItemsInStorage'][name] = item
+            end
+        end,
+
+        set = function(name, newItem)
+            Items['ItemsInStorage'][name] = newItem
+        end,
+
+        remove = function(name)
+            Items['ItemsInStorage'][name] = nil
+        end,
+
+        check = function(name)
+            if Items['ItemsInStorage'][name] ~= nil then
+                return true
+            else
+                return false
+            end
+        end,
+
+        get = function(name)
+            return Items['ItemsInStorage'][name]
+        end
+    }
+
+
+
+    
+
+    Toggles['Vault-Safe ESP_Toggle']:OnChanged(function()
+        if Toggles['Vault-Safe ESP_Toggle'].Value == true then
+            local name = 'VaultSigAddedWorkspace'
+
+            if Signals.Functions.check(name) == true then
+                Signals.Functions.remove(name)
+            end
+
+            local Vault = game:GetService('Workspace'):FindFirstChild('Vault')
+
+
+            if not Vault then
+                Signals.Functions.add(name, game:GetService('Workspace').ChildAdded:Connect(function(child)
+                    if child and child.Name:lower() == 'vault' then
+                        if Items.Functions.check('VaultWorkItem') == false then
+                            Items.Functions.add('VaultWorkItem', child)
+                            Items.Functions.add('VaultWorkItemAddedAlready', true)
+
+                            Script.Functions.ESP({
+                                Type = 'Vault',
+                                Object = Items.Functions.get('VaultWorkItem'),
+                                Text = 'Safe',
+                                Color = Options['Valut-Safe ESP::ColorPicker'].Value
+                            })
+
+                            Signals.Functions.remove(name)
+                        end
+                    end
+                end))
+            else
+                if Signals.Functions.check(name) == true then
+                    Signals.Functions.remove(name)
+                end
+
+                if Items.Functions.check('VaultWorkItem') == false then
+                    Items.Functions.add('VaultWorkItem', Vault)
+                end
+
+                if Items.Functions.check('VaultWorkItemAddedAlready') == false then
+                    Items.Functions.add('VaultWorkItemAddedAlready', true)
+                elseif Items.Functions.get('VaultWorkItemAddedAlready') == false then
+                    Items.Functions.set('VaultWorkItemAddedAlready', true)
+                end
+            end
+
+
+            if Items.Functions.check('VaultWorkItemAddedAlready') == true and Items.Functions.get('VaultWorkItemAddedAlready') == true then
+                Script.Functions.ESP({
+                    Type = 'Vault',
+                    Object = Items.Functions.get('VaultWorkItem'),
+                    Text = 'Vault',
+                    Color = Options['Valut-Safe ESP::ColorPicker'].Value
+                })
+            end
+        else
+            if Signals.Functions.check('VaultSigAddedWorkspace') == true then
+                Signals.Functions.remove('VaultSigAddedWorkspace')
+            end
+
+            Script.Functions.DeleteESP('Vault')
+        end
+    end)
+
+
+    Toggles['Paintings ESP_Toggle']:OnChanged(function()
+        if Toggles['Paintings ESP_Toggle'].Value == true then
+            local TheHouse = game:GetService('Workspace'):FindFirstChild('TheHouse')
+
+            if TheHouse then
+                for i, v in pairs(TheHouse:GetChildren()) do
+                    if v and v.Name:lower() == 'painting' then
+                        Script.Functions.ESP({
+                            Type = 'Paintings',
+                            Object = v,
+                            Text = 'Painting',
+                            Color = Options['Paintings ESP_ColorPicker'].Value
+                        })
+                    end
+                end
+            end
+        else
+            Script.Functions.DeleteESP('Paintings')
+        end
+    end)
+end
+
+
+
+Script.Functions.Notifs.Doors.Notify({
+    Title = 'Loaded!',
+    Description = 'Successfully loaded Script!',
+    Reason = ''
+})
+
+
+Script.Functions.Notifs.Doors.Notify({
+    Title = 'Dev - Release',
+    Description = 'This is a Developer Release. Please note that there mith be Errors',
+    Reason = ''
+})
+
+
+
+
+-- Script to copy from...
+--- RolesService
